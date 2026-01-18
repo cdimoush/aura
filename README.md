@@ -40,11 +40,15 @@ Instead of writing code manually, you speak your ideas into voice memos. Aura tr
 git clone https://github.com/youruser/aura.git
 cd aura
 
-# Install with uv
+# Create and activate a virtual environment
+uv venv
+source .venv/bin/activate
+
+# Install aura in development mode
 uv pip install -e .
 
-# Or with pip
-pip install -e .
+# Install script dependencies
+uv pip install -r .aura/scripts/requirements.txt
 ```
 
 ### Option 2: UV Tool Install (Coming Soon)
@@ -71,13 +75,17 @@ This creates:
 
 ```bash
 # Copy the example env file
-cp .aura/.env.example .env
+cp .aura/.env.example .aura/.env
 
-# Add your OpenAI API key
-echo "OPENAI_API_KEY=sk-your-key" >> .env
+# Add your OpenAI API key (edit the file with your key)
+echo "OPENAI_API_KEY=sk-your-key" >> .aura/.env
+
+# Create a virtual environment for aura scripts
+uv venv .aura/.venv
+source .aura/.venv/bin/activate
 
 # Install script dependencies
-pip install -r .aura/scripts/requirements.txt
+uv pip install -r .aura/scripts/requirements.txt
 ```
 
 ### 3. Verify Setup
@@ -139,7 +147,8 @@ After `aura init`:
 your-project/
 ├── .aura/
 │   ├── config.md              # Aura configuration (future)
-│   ├── .gitignore             # Ignores queue/, output/, .env
+│   ├── .gitignore             # Ignores queue/, output/, .env, .venv/
+│   ├── .venv/                 # Virtual environment for scripts
 │   ├── queue/                 # Audio files waiting to be processed
 │   ├── output/                # Processed memo outputs
 │   └── scripts/
@@ -235,16 +244,18 @@ ls -la .aura/scripts/
 
 ### "OPENAI_API_KEY not set"
 
-Create a `.env` file in your project root:
+Create a `.env` file in the `.aura/` directory:
 ```bash
-echo "OPENAI_API_KEY=sk-your-key" > .env
+echo "OPENAI_API_KEY=sk-your-key" > .aura/.env
 ```
 
 ### "pydub/openai not installed"
 
-Install script dependencies:
+Install script dependencies in a virtual environment:
 ```bash
-pip install -r .aura/scripts/requirements.txt
+uv venv .aura/.venv
+source .aura/.venv/bin/activate
+uv pip install -r .aura/scripts/requirements.txt
 ```
 
 ### "sox/rec command not found"

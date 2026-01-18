@@ -28,8 +28,11 @@ def get_template_files():
         for src in aura_source.glob("**/*"):
             if src.is_file() and src.name != ".gitkeep":
                 rel = src.relative_to(aura_source)
-                # Skip queue and output directories
-                if rel.parts and rel.parts[0] in ("queue", "output"):
+                # Skip queue, output, and .venv directories
+                if rel.parts and rel.parts[0] in ("queue", "output", ".venv"):
+                    continue
+                # Skip .env file (contains secrets)
+                if rel.name == ".env":
                     continue
                 dst = Path(".aura") / rel
                 files.append((src, dst))

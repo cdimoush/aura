@@ -71,9 +71,15 @@ def generate_title(transcription: str, model: str = "gpt-4o-mini") -> str:
         Sanitized kebab-case title
     """
     # Load environment variables from .env file
+    # Check .aura/.env first (standard location), then .env in current dir
     try:
         from dotenv import load_dotenv
-        load_dotenv()
+        from pathlib import Path
+        aura_env = Path(".aura/.env")
+        if aura_env.exists():
+            load_dotenv(aura_env)
+        else:
+            load_dotenv()  # Falls back to .env in current directory
     except ImportError:
         pass  # dotenv not installed, rely on environment variables
 
@@ -157,17 +163,23 @@ def main():
 
     args = parser.parse_args()
 
-    # Load environment variables
+    # Load environment variables from .env file
+    # Check .aura/.env first (standard location), then .env in current dir
     try:
         from dotenv import load_dotenv
-        load_dotenv()
+        from pathlib import Path
+        aura_env = Path(".aura/.env")
+        if aura_env.exists():
+            load_dotenv(aura_env)
+        else:
+            load_dotenv()  # Falls back to .env in current directory
     except ImportError:
         pass
 
     # Check for API key
     if not os.environ.get("OPENAI_API_KEY"):
         print("Error: OPENAI_API_KEY environment variable not set", file=sys.stderr)
-        print("Set it in your .env file or export it: export OPENAI_API_KEY=your-key", file=sys.stderr)
+        print("Set it in .aura/.env or export it: export OPENAI_API_KEY=your-key", file=sys.stderr)
         sys.exit(1)
 
     # Check for required dependencies
