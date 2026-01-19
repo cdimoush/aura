@@ -7,10 +7,8 @@ from pathlib import Path
 BEADS_INSTALL_MSG = """
 Beads CLI (bd) is required but not installed.
 
-Install beads using one of:
+Install beads:
   npm install -g @beads/bd
-  brew install steveyegge/beads/bd
-  go install github.com/steveyegge/beads/cmd/bd@latest
 
 Or run with --no-beads to skip beads integration.
 """

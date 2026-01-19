@@ -28,10 +28,7 @@ Instead of writing code manually, you speak your ideas into voice memos. Aura tr
 - **Claude Code**: [Install Claude Code](https://claude.ai/claude-code)
 - **beads**: Task management CLI - [GitHub](https://github.com/steveyegge/beads)
   ```bash
-  # Choose one:
-  npm install -g @beads/bd              # npm
-  brew install steveyegge/beads/bd      # Homebrew
-  go install github.com/steveyegge/beads/cmd/bd@latest  # Go
+  npm install -g @beads/bd
   ```
 - **ffmpeg**: Audio processing (for transcription)
   - macOS: `brew install ffmpeg`
@@ -223,14 +220,31 @@ Configuration file for project-specific settings. Not yet implemented.
 /aura.implement first-task-id
 ```
 
+## Verification
+
+After installation, verify everything works:
+
+```bash
+# Quick verification
+mkdir /tmp/aura-test && cd /tmp/aura-test
+git init
+aura init
+aura check
+```
+
+Expected: 18 files created, all prerequisites pass (except OPENAI_API_KEY which is optional).
+
+For detailed verification instructions, see [tests/tron/INSTRUCTIONS.md](tests/tron/INSTRUCTIONS.md).
+
 ## Testing
 
-The `tests/tron/` directory contains a test fixture that demonstrates aura initialization.
+The `tests/tron/` directory contains a test fixture for development:
 
 ```bash
 cd tests/tron
+rm -rf .aura .claude .beads
 aura init --force
-ls -la .aura/scripts/
+aura check
 ```
 
 ## Troubleshooting
