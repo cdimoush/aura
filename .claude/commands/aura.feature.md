@@ -1,4 +1,5 @@
 ---
+allowed-tools: Bash(mkdir:*), Read, Write, Glob
 description: Plan and implement a feature
 argument-hint: <feature description>
 ---

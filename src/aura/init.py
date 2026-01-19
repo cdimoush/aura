@@ -1,7 +1,30 @@
 """Aura initialization logic."""
 
 import shutil
+import subprocess
 from pathlib import Path
+
+BEADS_INSTALL_MSG = """
+Beads CLI (bd) is required but not installed.
+
+Install beads using one of:
+  npm install -g @beads/bd
+  brew install steveyegge/beads/bd
+  go install github.com/steveyegge/beads/cmd/bd@latest
+
+Or run with --no-beads to skip beads integration.
+"""
+
+
+class BeadsNotFoundError(Exception):
+    """Raised when beads CLI is not available."""
+
+    pass
+
+
+def check_beads_available() -> bool:
+    """Check if beads CLI (bd) is available."""
+    return shutil.which("bd") is not None
 
 
 def get_aura_root() -> Path:
@@ -48,8 +71,21 @@ def get_template_files():
 
 
 def init_aura(force: bool = False, dry_run: bool = False, no_beads: bool = False):
-    """Initialize Aura in current directory."""
-    results = {"created": [], "skipped": [], "errors": []}
+    """Initialize Aura in current directory.
+
+    Raises:
+        BeadsNotFoundError: If beads CLI not available and --no-beads not set.
+    """
+    results = {"created": [], "skipped": [], "errors": [], "warnings": []}
+
+    # Check beads availability upfront (unless skipped)
+    if not no_beads and not check_beads_available():
+        raise BeadsNotFoundError(BEADS_INSTALL_MSG)
+
+    if no_beads:
+        results["warnings"].append(
+            "Skipping beads integration. Task management commands will not work."
+        )
 
     for src, dst in get_template_files():
         if dry_run:
@@ -70,16 +106,14 @@ def init_aura(force: bool = False, dry_run: bool = False, no_beads: bool = False
         except Exception as e:
             results["errors"].append(f"{dst}: {e}")
 
-    # Initialize beads if available and not skipped
+    # Initialize beads if not skipped
     if not no_beads and not dry_run:
         beads_dir = Path(".beads")
-        if not beads_dir.exists():
+        if not beads_dir.exists() or force:
             try:
-                import subprocess
-
                 subprocess.run(["bd", "init"], check=True, capture_output=True)
                 results["created"].append(".beads/ (via bd init)")
-            except (subprocess.CalledProcessError, FileNotFoundError):
-                pass  # bd not available, skip silently
+            except subprocess.CalledProcessError as e:
+                results["errors"].append(f".beads/: bd init failed: {e}")
 
     return results

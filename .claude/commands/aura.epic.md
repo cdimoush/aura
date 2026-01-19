@@ -1,4 +1,5 @@
 ---
+allowed-tools: Bash(mkdir:*), Read, Write, Glob
 description: Break a vision into ordered specs with dependencies
 argument-hint: <epic description or vision-doc.md>
 ---

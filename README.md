@@ -23,38 +23,31 @@ Instead of writing code manually, you speak your ideas into voice memos. Aura tr
 
 ### Prerequisites
 
+- **uv**: Python package manager - [Install uv](https://docs.astral.sh/uv/getting-started/installation/)
+- **git**: Version control
 - **Claude Code**: [Install Claude Code](https://claude.ai/claude-code)
-- **Python 3.12+**: Required for transcription scripts
-- **ffmpeg**: Required by pydub for audio processing
+- **beads**: Task management CLI - [GitHub](https://github.com/steveyegge/beads)
+  ```bash
+  # Choose one:
+  npm install -g @beads/bd              # npm
+  brew install steveyegge/beads/bd      # Homebrew
+  go install github.com/steveyegge/beads/cmd/bd@latest  # Go
+  ```
+- **ffmpeg**: Audio processing (for transcription)
   - macOS: `brew install ffmpeg`
   - Ubuntu: `sudo apt-get install ffmpeg`
 - **sox** (optional): For recording from CLI
   - macOS: `brew install sox`
   - Ubuntu: `sudo apt-get install sox libsox-fmt-all`
-- **beads** (optional): For task management ([beads CLI](https://github.com/anthropics/beads))
 
-### Option 1: Git Clone (Development)
+### Install Aura
 
 ```bash
-# Clone the repository
-git clone https://github.com/youruser/aura.git
+git clone https://github.com/cdimoush/aura.git
 cd aura
-
-# Create and activate a virtual environment
-uv venv
-source .venv/bin/activate
-
-# Install aura in development mode
-uv pip install -e .
-
-# Install script dependencies
-uv pip install -r .aura/scripts/requirements.txt
-```
-
-### Option 2: UV Tool Install (Coming Soon)
-
-```bash
-uv tool install aura
+uv venv && source .venv/bin/activate
+uv pip install -e . -r .aura/scripts/requirements.txt
+aura --version  # Verify installation
 ```
 
 ## Quick Start

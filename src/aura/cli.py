@@ -2,7 +2,7 @@
 
 import click
 
-from aura.init import init_aura
+from aura.init import init_aura, BeadsNotFoundError
 
 
 @click.group()
@@ -23,7 +23,14 @@ def init(force, dry_run, no_beads):
     else:
         click.echo("Initializing Aura...\n")
 
-    results = init_aura(force=force, dry_run=dry_run, no_beads=no_beads)
+    try:
+        results = init_aura(force=force, dry_run=dry_run, no_beads=no_beads)
+    except BeadsNotFoundError as e:
+        click.echo(str(e), err=True)
+        raise SystemExit(1)
+
+    for warning in results.get("warnings", []):
+        click.echo(f"  Warning: {warning}", err=True)
 
     for path in results["created"]:
         prefix = "Would create" if dry_run else "Created"
@@ -47,12 +54,19 @@ def check():
     """Verify prerequisites are installed."""
     import os
     import shutil
+    from pathlib import Path
+
+    # Load .aura/.env if it exists
+    env_file = Path(".aura/.env")
+    if env_file.exists():
+        from dotenv import load_dotenv
+        load_dotenv(env_file)
 
     checks = [
         ("Python 3.12+", lambda: True),  # We're running, so yes
         ("Claude Code", lambda: shutil.which("claude") is not None),
         ("OPENAI_API_KEY", lambda: os.environ.get("OPENAI_API_KEY") is not None),
-        ("sox", lambda: shutil.which("sox") is not None),
+        ("ffmpeg", lambda: shutil.which("ffmpeg") is not None),
         ("beads (bd)", lambda: shutil.which("bd") is not None),
     ]
 
