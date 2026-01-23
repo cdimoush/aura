@@ -111,12 +111,6 @@ aura check
 | `/aura.act` | Full pipeline: transcribe + act | `/aura.act .aura/queue/memo.wav` |
 | `/aura.process` | Process voice memos from queue to output | `/aura.process` |
 
-### Brain Integration (cyborg.*)
-
-| Command | Description | Example |
-|---------|-------------|---------|
-| `/cyborg.process` | Process voice memos into brain notes | `/cyborg.process` |
-
 ### Planning Commands (aura.*)
 
 | Command | Description | Example |
@@ -153,7 +147,6 @@ your-project/
 │       ├── transcribe.py      # OpenAI Whisper transcription
 │       ├── generate_title.py  # Intelligent title generation
 │       ├── record_memo.py     # CLI recording via sox
-│       ├── intent_detection.py # Detect memo intent/category
 │       └── requirements.txt   # Script dependencies
 ├── .beads/                    # Task tracking (if beads available)
 ├── .claude/
@@ -168,7 +161,6 @@ your-project/
 │       ├── aura.ticket-dev.md
 │       ├── aura.tickets.md
 │       ├── aura.transcribe.md
-│       ├── cyborg.process.md
 │       ├── beads.done.md
 │       ├── beads.ready.md
 │       ├── beads.start.md
@@ -393,6 +385,15 @@ vim .claude/commands/aura.act.md
 # Test immediately in Claude Code
 /aura.act test.wav
 ```
+
+## Future Work
+
+- **`aura check` enhancements**: More detailed validation and diagnostics
+- **`.aura/config.md`**: Project-specific configuration file
+- **Plugin system**: Custom commands and workflows
+- **`uv tool install`**: Global installation support
+- **Multi-agent support**: Cursor, Copilot, and other AI coding tools
+- **`aura update`**: Selective script updates without full re-init
 
 ## Contributing
 

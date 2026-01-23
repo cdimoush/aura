@@ -47,15 +47,17 @@ Read the raw transcript from the memo directory:
 
 ### 3b. Detect Intent
 
-Use the intent detection script:
+Analyze the transcript to detect the user's intent. Look for these patterns:
 
-```bash
-python .aura/scripts/intent_detection.py --file ".aura/queue/<memo-title>/transcript.txt"
-```
+| Intent | Trigger Phrases |
+|--------|-----------------|
+| **research** | "research", "look up", "search for", "what is", "how does", "why does", "find information" |
+| **summary** | "summarize", "sum up", "tldr", "key points", "main ideas", "condense" |
+| **code** | "code", "pseudocode", "algorithm", "write a function", "implement", "code snippet" |
+| **paraphrase** | "paraphrase", "rewrite", "rephrase", "clarify", "make clearer", "clean up" |
+| **default** | None of the above patterns match |
 
-This returns one of: `research`, `summary`, `code`, `paraphrase`, or `default`.
-
-Inform the user of the detected intent.
+Classify the transcript into one of these five intents and inform the user of the detected intent.
 
 ### 3c. Process Based on Intent
 
@@ -89,7 +91,7 @@ Transform the transcript content based on detected intent:
 #### Default Intent
 - Remove filler words (um, uh, like, you know, so, basically)
 - Remove stuttering and repeated words
-- Apply inline edits using: `python .aura/scripts/intent_detection.py --clean --file "<file>"`
+- Apply inline edits (when user says "actually", "scratch that", "no I mean", keep only the correction)
 - Preserve the original content and tone
 - Minimal transformation - just clean up speech artifacts
 

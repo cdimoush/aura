@@ -6,7 +6,15 @@ Define the rules and implementation for detecting user intent from voice memo tr
 
 ## Approach
 
-Pattern-based keyword matching for intent detection. Simple, fast, and covers most use cases. LLM-based analysis can be added as a future enhancement if needed.
+**LLM-based inline analysis** - Claude analyzes the transcript directly during command execution. No external scripts or subprocess calls needed.
+
+### Why LLM Instead of Pattern Matching?
+
+1. **More accurate**: LLM understands context and nuance that regex patterns miss
+2. **Faster**: No subprocess overhead or Python interpreter startup
+3. **Simpler**: No cross-project script dependencies
+4. **Self-contained**: Commands work without external files
+5. **Flexible**: Can handle edge cases and ambiguous intents
 
 ## Intent Categories
 
@@ -74,78 +82,24 @@ When processing a voice memo, detect user intent:
 
 ## Implementation
 
-### Pattern Matching
+The intent detection is embedded directly in the Claude Code slash commands (`/aura.process` and `/cyborg.process`). When Claude executes these commands, it:
 
-```python
-import re
+1. Reads the transcript file
+2. Analyzes the content against the trigger phrases table
+3. Classifies into one of the five intents
+4. Applies intent-specific transformations
 
-def detect_intent(transcript: str) -> str:
-    """Detect user intent from transcript.
+### Inline Intent Detection Table
 
-    Returns:
-        One of: 'research', 'summary', 'code', 'paraphrase', 'default'
-    """
-    text_lower = transcript.lower()
+Commands include this reference table for Claude to use during analysis:
 
-    # Research patterns
-    research_patterns = [
-        r'\b(research|look up|search for|find information)\b',
-        r'\b(what is|how does|why does|how do I)\b',
-        r'\bgoogle\b'
-    ]
-    if any(re.search(p, text_lower) for p in research_patterns):
-        return 'research'
-
-    # Summary patterns
-    summary_patterns = [
-        r'\b(summarize|sum up|tldr|tl;dr)\b',
-        r'\b(key points|main ideas)\b',
-        r'\b(condense|brief)\b'
-    ]
-    if any(re.search(p, text_lower) for p in summary_patterns):
-        return 'summary'
-
-    # Code patterns
-    code_patterns = [
-        r'\b(code|pseudocode|algorithm)\b',
-        r'\b(write (a )?function|implement)\b',
-        r'\b(example code|code snippet)\b'
-    ]
-    if any(re.search(p, text_lower) for p in code_patterns):
-        return 'code'
-
-    # Paraphrase patterns
-    paraphrase_patterns = [
-        r'\b(paraphrase|rewrite|rephrase)\b',
-        r'\b(say differently|clarify)\b',
-        r'\b(make clearer|clean up)\b'
-    ]
-    if any(re.search(p, text_lower) for p in paraphrase_patterns):
-        return 'paraphrase'
-
-    # Default: no explicit intent
-    return 'default'
-```
-
-### LLM Fallback (Future Enhancement)
-
-If pattern matching proves insufficient, LLM-based intent detection can be added:
-
-```python
-def detect_intent_llm(transcript: str) -> str:
-    """Use LLM to detect intent when pattern matching is ambiguous."""
-    prompt = f"""Analyze this voice memo transcript and identify the user's intent.
-
-Choose ONE of: research, summary, code, paraphrase, default
-
-Transcript: {transcript[:500]}
-
-Intent:"""
-
-    # Call OpenAI API (similar to generate_title.py)
-    # ...
-    return intent
-```
+| Intent | Trigger Phrases |
+|--------|-----------------|
+| **research** | "research", "look up", "search for", "what is", "how does", "why does", "find information" |
+| **summary** | "summarize", "sum up", "tldr", "key points", "main ideas", "condense" |
+| **code** | "code", "pseudocode", "algorithm", "write a function", "implement", "code snippet" |
+| **paraphrase** | "paraphrase", "rewrite", "rephrase", "clarify", "make clearer", "clean up" |
+| **default** | None of the above patterns match |
 
 ## Inline Edit Detection
 
@@ -163,98 +117,32 @@ For default intent, detect and follow inline edits:
 - "We need three parameters... no, I mean four parameters"
   → "We need four parameters"
 
-**Implementation**:
-```python
-def clean_inline_edits(text: str) -> str:
-    """Remove text before inline edit markers."""
-    # Split on edit markers
-    patterns = [
-        r'\.{2,}?\s*(actually|wait|scratch that)',
-        r'\b(no|correction)[,\s]+(I mean|that should be)',
-        r'(never mind|forget that)',
-    ]
-
-    # For each pattern, remove text before it
-    # Keep text after the marker
-    # ...
-
-    return cleaned_text
-```
-
-## Tasks
-
-- [ ] Implement `detect_intent()` function with pattern matching
-- [ ] Implement `clean_inline_edits()` function
-- [ ] Create unit tests for each intent pattern
-- [ ] Create unit tests for inline edit detection
-- [ ] Document patterns in processing command files
-- [ ] Add examples to `.claude/commands/aura.process.md`
+Claude handles these naturally during transcript processing - no separate function needed.
 
 ## Acceptance Criteria
 
-- [ ] `detect_intent()` correctly identifies all 5 intent types
-- [ ] Pattern matching is case-insensitive
-- [ ] Inline edit detection works for common phrases
-- [ ] False positive rate < 5% on test transcripts
-- [ ] False negative rate < 10% on test transcripts
-- [ ] Function is fast (< 50ms for typical transcript)
-- [ ] Code is well-documented with examples
+- [x] Commands include intent trigger phrases for reference
+- [x] No external script dependencies
+- [x] Intent detection happens inline during command execution
+- [x] All 5 intent types are documented
+- [x] Inline edit handling is documented
 
-## Testing Plan
+## Testing
 
-### Unit Tests
-
-Create test cases for each intent:
-
-```python
-def test_research_intent():
-    assert detect_intent("I want to research OAuth implementation") == "research"
-    assert detect_intent("How does JWT authentication work?") == "research"
-
-def test_summary_intent():
-    assert detect_intent("Please summarize this idea") == "summary"
-    assert detect_intent("Give me the key points") == "summary"
-
-def test_code_intent():
-    assert detect_intent("Write pseudocode for bubble sort") == "code"
-    assert detect_intent("Show me example code") == "code"
-
-def test_paraphrase_intent():
-    assert detect_intent("Can you rephrase this more clearly?") == "paraphrase"
-
-def test_default_intent():
-    assert detect_intent("This is just a note about the meeting") == "default"
-```
-
-### Integration Tests
-
-Test with actual transcripts:
+Test with actual voice memos:
 
 ```bash
 # Record test memos with explicit intents
-python .aura/scripts/record_memo.py  # "Research React hooks best practices"
-python .aura/scripts/record_memo.py  # "Summarize the API design"
-python .aura/scripts/record_memo.py  # "Just a random thought about the code"
+/aura.record  # "Research React hooks best practices"
+/aura.record  # "Summarize the API design"
+/aura.record  # "Just a random thought about the code"
 
 # Process and verify intent detection
-/aura.process
+/aura.process --all
 ```
-
-## Documentation
-
-- [ ] Document intent categories in CLAUDE.md
-- [ ] Add examples to processing command templates
-- [ ] Include in README.md workflow section
-
-## Dependencies
-
-- No external dependencies (uses standard library regex)
-- Must complete before: [Feature: Aura Process Command](./feature-aura-process.md)
 
 ## Notes
 
-- Start simple with pattern matching only
-- Add LLM fallback if users report misdetection
-- Consider adding explicit intent markers: "Intent: research" in transcript
+- LLM approach handles ambiguous cases better than regex
 - Future: Support multiple intents in single memo ("Research X and write code for Y")
-- Future: User-configurable patterns via `.aura/config.md`
+- Future: User-configurable intent patterns via `.aura/config.md`
