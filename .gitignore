@@ -3,6 +3,9 @@
 .aura/output/
 .env
 
+# Beads
+.beads/
+
 # Python
 __pycache__/
 *.py[cod]
