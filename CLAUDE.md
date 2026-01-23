@@ -88,6 +88,39 @@ The init process:
 - Define slash commands available in Claude Code sessions
 - Also used directly when developing aura
 
+## Voice Memo Queue Structure
+
+Voice memos are staged in a queue directory before processing. Each memo is self-contained in its own subdirectory.
+
+### Directory Layout
+
+```
+.aura/
+├── queue/                       # Pending memos (git-ignored)
+│   ├── <title>/
+│   │   ├── audio.wav            # Original recording (WAV/PCM)
+│   │   └── transcript.txt       # Raw Whisper transcript (UTF-8)
+│   └── <another-title>/
+│       ├── audio.wav
+│       └── transcript.txt
+└── output/                      # Processed results (git-ignored)
+```
+
+### Title Format
+
+Titles are generated from transcript content by `generate_title.py`:
+- **kebab-case**: lowercase with hyphens (e.g., `bug-fix-authentication`)
+- **Max 50 characters**: truncated if necessary
+- **Filesystem-safe**: alphanumeric and hyphens only
+- **Fallback**: `memo-YYYYMMDD-HHMMSS` if generation fails
+
+### File Contents
+
+| File | Format | Purpose |
+|------|--------|---------|
+| `audio.wav` | WAV (PCM) | Archival, re-transcription |
+| `transcript.txt` | Plain text (UTF-8) | Input for processing commands |
+
 ### Template Anatomy
 
 Claude Code command templates have this structure:
@@ -245,9 +278,94 @@ Templates are copied (not symlinked) because:
 2. Users can customize their copies
 3. Works across different machines/environments
 
+### Cross-Project Recording
+
+Scripts are distributed via `aura init` to enable self-contained recording in any project.
+
+**Design Decision**: Each project gets its own copy of recording scripts rather than using a global Aura installation. This matches Aura's template approach where all files are copied to target repos.
+
+**Rationale**:
+1. **Self-contained**: Projects work without external Aura dependencies
+2. **Portable**: Move/copy project without path issues
+3. **Consistent**: Same distribution pattern as all other templates
+4. **Customizable**: Users can modify scripts per-project if needed
+
+**How Scripts Are Distributed**:
+- `aura init` copies `.aura/scripts/*.py` to target project
+- Each project has its own `.aura/.venv/` for Python dependencies
+- SoX is the only system-wide dependency (for audio recording)
+- Recordings go to that project's `.aura/queue/`
+
+**Update Strategy**:
+- Run `aura init --force` to re-sync scripts from Aura
+- Future: `aura update` command for selective script updates
+
+**Trade-off**: Script duplication across projects is acceptable because:
+- Scripts are small and change infrequently
+- Users can manually sync when needed
+- Independence outweighs the minor storage cost
+
 ### Why Beads Integration?
 
 Beads provides dependency-aware task management that pairs well with epic/feature planning. It's optional - aura works without it, but the workflow is enhanced with it.
+
+## Brain Note Format
+
+Brain notes are knowledge artifacts created from voice memos. They use single markdown files with YAML frontmatter in a flat directory structure.
+
+### Location and Structure
+
+```
+brain/
+└── <title>.md
+```
+
+### Required Frontmatter Fields
+
+| Field | Description | Example |
+|-------|-------------|---------|
+| `title` | Generated title for the note | `Bug Fix Authentication Issue` |
+| `created` | ISO 8601 timestamp | `2026-01-22T14:30:00Z` |
+| `tags` | Auto-generated and manual tags | `[bug-fix, authentication, voice-memo]` |
+| `source` | Origin of the note | `voice-memo` |
+
+### Example Brain Note
+
+```markdown
+---
+title: Bug Fix Authentication Issue
+created: 2026-01-22T14:30:00Z
+tags: [bug-fix, authentication, security, voice-memo, 2026-01]
+source: voice-memo
+audio: .aura/output/bug-fix-authentication/audio.wav
+---
+
+# Bug Fix Authentication Issue
+
+<processed content from transcript>
+
+## Original Transcript
+
+<raw transcript for reference>
+```
+
+### Auto-Tagging Strategy
+
+When creating brain notes from voice memos, tags are auto-generated from multiple sources:
+
+1. **From Intent**: Research intent adds `#research`, code intent adds `#code`, summary intent adds `#summary`
+2. **From Content**: Technical terms (OAuth, API, React), action verbs (refactor, implement, fix), domain concepts (authentication, frontend, database)
+3. **Temporal Tags**: Timestamp-based tags like `#2026-01` for monthly grouping
+4. **Source Tag**: All voice memos get `#voice-memo`
+
+### Design Rationale
+
+Single file with frontmatter was chosen because:
+- Simplest to implement and maintain
+- Standard markdown format with wide tool support
+- Portable (one file = one note)
+- Easy to grep/search by tag or content
+- Git-friendly and human-readable
 
 ## Future Work
 
@@ -283,4 +401,4 @@ cat .aura/scripts/requirements.txt
 
 ---
 
-*Last updated: 2026-01-18*
+*Last updated: 2026-01-22*

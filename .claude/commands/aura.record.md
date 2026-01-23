@@ -1,60 +1,77 @@
 ---
-allowed-tools: Bash(sox:*), Bash(rec:*), Bash(ls:*), Bash(mkdir:*), Bash(date:*), Glob
+allowed-tools: Bash(python:*), Bash(rec:*), Bash(ls:*), Bash(mkdir:*), Read, Glob
 description: Record voice memo to queue
-argument-hint: [duration_in_seconds]
+argument-hint: [--duration SECONDS]
 ---
 
 # Record Voice Memo
 
-Record audio from your microphone and save to `.aura/queue/` for transcription.
+Record audio from your microphone, automatically transcribe it, and save to `.aura/queue/` with a generated title.
 
 ## Prerequisites
 
-- `sox` must be installed
-  - macOS: `brew install sox`
-  - Ubuntu: `sudo apt-get install sox libsox-fmt-all`
+1. **SoX** for audio recording:
+   - macOS: `brew install sox`
+   - Ubuntu: `sudo apt-get install sox libsox-fmt-all`
+
+2. **ffmpeg** for audio processing:
+   - macOS: `brew install ffmpeg`
+   - Ubuntu: `sudo apt-get install ffmpeg`
+
+3. **Python dependencies** in a virtual environment:
+   ```bash
+   cd .aura/scripts
+   python -m venv .venv
+   source .venv/bin/activate
+   pip install -r requirements.txt
+   ```
+
+4. **OpenAI API key** set in `.aura/.env`:
+   ```
+   OPENAI_API_KEY=sk-...
+   ```
 
 ## Instructions
 
-1. Create the queue directory if it doesn't exist:
-   ```bash
-   mkdir -p .aura/queue
-   ```
-
-2. Generate filename with timestamp:
-   ```bash
-   FILENAME=".aura/queue/memo_$(date +%Y%m%d_%H%M%S).wav"
-   ```
-
-3. Start recording:
+1. Run the recording script:
    ```bash
    # Default: record until Ctrl+C
-   rec "$FILENAME"
+   python .aura/scripts/record_memo.py
 
-   # Or with duration limit (if $ARGUMENTS provided):
-   rec "$FILENAME" trim 0 $ARGUMENTS
+   # With duration limit (in seconds):
+   python .aura/scripts/record_memo.py --duration 120
    ```
 
-4. After recording completes, show the user:
-   - File location and size: `ls -lh "$FILENAME"`
-   - Next steps: `/aura.transcribe` or `/aura.act`
+2. The script will:
+   - Record audio from your microphone
+   - Transcribe the audio using OpenAI Whisper
+   - Generate a descriptive title
+   - Save to `.aura/queue/<title>/` with `audio.wav` and `transcript.txt`
+
+3. After recording, the memo is ready for processing with `/aura.process` or `/aura.act`.
+
+## Output Structure
+
+Each memo is saved as a directory:
+```
+.aura/queue/
+└── add-error-handling-to-login/
+    ├── audio.wav
+    └── transcript.txt
+```
 
 ## Tips
 
-- **Stop early**: Press Ctrl+C to stop before max duration
-- **Custom duration**: `/aura.record 60` for 60-second max
-- **Batch process**: Record multiple memos, then process with `/aura.act`
+- **Stop early**: Press Ctrl+C to stop recording before the duration limit
+- **Custom duration**: Use `--duration 60` for a 60-second max
+- **Custom queue dir**: Use `--queue-dir path/to/dir` to override default location
+- **Batch process**: Record multiple memos, then process all with `/aura.process`
 
 ## Error Handling
 
-If sox is not installed:
-```
-sox/rec command not found.
-Install with:
-  macOS: brew install sox
-  Ubuntu: sudo apt-get install sox libsox-fmt-all
-```
+If prerequisites are missing, the script will show specific installation instructions.
 
 If recording fails, check:
 - Microphone permissions (macOS: System Settings > Privacy & Security > Microphone)
-- Audio device availability: `sox --help-device`
+- Audio device availability: `rec --help-device`
+- API key is set: `cat .aura/.env`

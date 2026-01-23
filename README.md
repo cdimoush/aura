@@ -109,6 +109,13 @@ aura check
 | `/aura.record` | Record voice memo from microphone | `/aura.record 60` (60s max) |
 | `/aura.transcribe` | Transcribe audio file to text | `/aura.transcribe audio.m4a` |
 | `/aura.act` | Full pipeline: transcribe + act | `/aura.act .aura/queue/memo.wav` |
+| `/aura.process` | Process voice memos from queue to output | `/aura.process` |
+
+### Brain Integration (cyborg.*)
+
+| Command | Description | Example |
+|---------|-------------|---------|
+| `/cyborg.process` | Process voice memos into brain notes | `/cyborg.process` |
 
 ### Planning Commands (aura.*)
 
@@ -145,6 +152,8 @@ your-project/
 │   └── scripts/
 │       ├── transcribe.py      # OpenAI Whisper transcription
 │       ├── generate_title.py  # Intelligent title generation
+│       ├── record_memo.py     # CLI recording via sox
+│       ├── intent_detection.py # Detect memo intent/category
 │       └── requirements.txt   # Script dependencies
 ├── .beads/                    # Task tracking (if beads available)
 ├── .claude/
@@ -154,10 +163,12 @@ your-project/
 │       ├── aura.feature.md
 │       ├── aura.implement.md
 │       ├── aura.prime.md
+│       ├── aura.process.md
 │       ├── aura.record.md
 │       ├── aura.ticket-dev.md
 │       ├── aura.tickets.md
 │       ├── aura.transcribe.md
+│       ├── cyborg.process.md
 │       ├── beads.done.md
 │       ├── beads.ready.md
 │       ├── beads.start.md
@@ -240,6 +251,83 @@ Configuration file for project-specific settings. Not yet implemented.
 # → Shows all running agents and their status
 
 # When agents complete, they report results and close tickets
+```
+
+## Cross-Project Recording
+
+Each Aura-initialized project is fully self-contained for voice recording and transcription.
+
+### How It Works
+
+When you run `aura init` in a project, it copies all scripts to that project's `.aura/scripts/` directory. Each project manages its own:
+- Recording scripts
+- Audio queue (`.aura/queue/`)
+- Python dependencies (`.aura/.venv/`)
+- Output directory (`.aura/output/`)
+
+### System Dependencies
+
+SoX (for recording) must be installed system-wide:
+```bash
+# macOS
+brew install sox
+
+# Ubuntu
+sudo apt-get install sox libsox-fmt-all
+```
+
+### Per-Project Setup
+
+After `aura init`, set up Python dependencies for that project:
+```bash
+cd your-project
+
+# Create virtual environment
+uv venv .aura/.venv
+source .aura/.venv/bin/activate
+
+# Install dependencies
+uv pip install -r .aura/scripts/requirements.txt
+
+# Configure API key
+cp .aura/.env.example .aura/.env
+# Edit .aura/.env and add your OPENAI_API_KEY
+```
+
+### Recording Workflow
+
+From any Aura-initialized project:
+```bash
+cd your-project
+source .aura/.venv/bin/activate
+python .aura/scripts/record_memo.py
+# Audio saved to your-project/.aura/queue/
+```
+
+Or use the Claude Code command:
+```bash
+/aura.record
+```
+
+### Multiple Projects
+
+Each project operates independently:
+```bash
+# Project A
+cd ~/projects/app-a
+python .aura/scripts/record_memo.py
+# Records to ~/projects/app-a/.aura/queue/
+
+# Project B
+cd ~/projects/app-b
+python .aura/scripts/record_memo.py
+# Records to ~/projects/app-b/.aura/queue/
+```
+
+To update scripts after an Aura upgrade:
+```bash
+cd your-project
+aura init --force
 ```
 
 ## Verification

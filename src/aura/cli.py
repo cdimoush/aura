@@ -91,5 +91,98 @@ def check():
         click.echo("\nAll prerequisites met!")
 
 
+def get_dir_size(path) -> int:
+    """Get total size of directory in bytes."""
+    return sum(f.stat().st_size for f in path.rglob("*") if f.is_file())
+
+
+def format_size(bytes: int) -> str:
+    """Format bytes as human-readable size."""
+    for unit in ["B", "KB", "MB", "GB"]:
+        if bytes < 1024:
+            return f"{bytes:.1f}{unit}"
+        bytes /= 1024
+    return f"{bytes:.1f}TB"
+
+
+@main.command()
+@click.option("--force", is_flag=True, help="Skip confirmation prompt")
+@click.option("--dry-run", is_flag=True, help="Show what would be deleted")
+@click.option("--keep-output", is_flag=True, help="Preserve .aura/output directory")
+def remove(force, dry_run, keep_output):
+    """Remove Aura from current directory."""
+    import shutil
+    from pathlib import Path
+
+    # Find all Aura-related files/directories
+    targets = []
+
+    # .aura directory
+    aura_dir = Path(".aura")
+    if aura_dir.exists():
+        if keep_output:
+            # List individual subdirs except output
+            for item in aura_dir.iterdir():
+                if item.name != "output":
+                    targets.append(item)
+        else:
+            targets.append(aura_dir)
+
+    # .claude/commands aura and beads files
+    commands_dir = Path(".claude/commands")
+    if commands_dir.exists():
+        for pattern in ["aura.*.md", "beads.*.md"]:
+            targets.extend(commands_dir.glob(pattern))
+
+    # .beads directory
+    beads_dir = Path(".beads")
+    if beads_dir.exists():
+        targets.append(beads_dir)
+
+    if not targets:
+        click.echo("No Aura files found in current directory.")
+        return
+
+    # Show what will be deleted
+    click.echo("The following will be removed:\n")
+    for target in targets:
+        try:
+            size = get_dir_size(target) if target.is_dir() else target.stat().st_size
+            size_str = format_size(size)
+        except (OSError, PermissionError):
+            size_str = "unknown"
+        click.echo(f"  {target} ({size_str})")
+
+    if dry_run:
+        click.echo("\nDry run - nothing was deleted.")
+        return
+
+    # Confirm deletion
+    if not force:
+        click.echo()
+        if not click.confirm("Proceed with removal?"):
+            click.echo("Cancelled.")
+            return
+
+    # Delete
+    errors = []
+    for target in targets:
+        try:
+            if target.is_dir():
+                shutil.rmtree(target)
+            else:
+                target.unlink()
+            click.echo(f"  Removed {target}")
+        except Exception as e:
+            errors.append(f"{target}: {e}")
+            click.echo(f"  Error removing {target}: {e}", err=True)
+
+    if errors:
+        click.echo(f"\nCompleted with {len(errors)} errors.", err=True)
+        raise SystemExit(1)
+    else:
+        click.echo("\nAura removed successfully!")
+
+
 if __name__ == "__main__":
     main()
