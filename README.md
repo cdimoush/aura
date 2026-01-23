@@ -118,6 +118,7 @@ aura check
 | `/aura.feature` | Plan a feature with spec | `/aura.feature add-dark-mode` |
 | `/aura.tickets` | Convert epic to beads tasks | `/aura.tickets specs/epic-auth/` |
 | `/aura.implement` | Implement from ticket or spec | `/aura.implement abc-123` |
+| `/aura.ticket-dev` | Spawn autonomous agent for ticket | `/aura.ticket-dev abc-123 --parallel` |
 | `/aura.prime` | Load project context | `/aura.prime` |
 
 ### Task Commands (beads.*)
@@ -154,6 +155,7 @@ your-project/
 │       ├── aura.implement.md
 │       ├── aura.prime.md
 │       ├── aura.record.md
+│       ├── aura.ticket-dev.md
 │       ├── aura.tickets.md
 │       ├── aura.transcribe.md
 │       ├── beads.done.md
@@ -218,6 +220,26 @@ Configuration file for project-specific settings. Not yet implemented.
 # Work through tasks
 /beads.ready
 /aura.implement first-task-id
+```
+
+### Example 3: Parallel Ticket Development
+
+```bash
+# Check ready tasks
+/beads.ready
+# → Shows: abc-001, abc-002, abc-003 (all ready)
+
+# Launch agents in parallel
+/aura.ticket-dev abc-001 --parallel
+/aura.ticket-dev abc-002 --parallel
+/aura.ticket-dev abc-003 --parallel
+# → 3 agents working simultaneously
+
+# Check progress
+/tasks
+# → Shows all running agents and their status
+
+# When agents complete, they report results and close tickets
 ```
 
 ## Verification

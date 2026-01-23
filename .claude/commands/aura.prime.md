@@ -60,16 +60,17 @@ Active Work:
   (or "No active tasks")
 
 Available Aura Commands:
-  /aura.record    - Record voice memo
-  /aura.act       - Transcribe and act on audio
-  /aura.epic      - Create epic plan
-  /aura.feature   - Plan a feature
-  /aura.tickets   - Convert epic to beads tasks
-  /aura.implement - Implement from ticket
-  /beads.status   - Show task overview
-  /beads.ready    - Show available tasks
-  /beads.start    - Start a task
-  /beads.done     - Complete a task
+  /aura.record     - Record voice memo
+  /aura.act        - Transcribe and act on audio
+  /aura.epic       - Create epic plan
+  /aura.feature    - Plan a feature
+  /aura.tickets    - Convert epic to beads tasks
+  /aura.implement  - Implement from ticket
+  /aura.ticket-dev - Spawn autonomous agent for ticket
+  /beads.status    - Show task overview
+  /beads.ready     - Show available tasks
+  /beads.start     - Start a task
+  /beads.done      - Complete a task
 
 Ready to help! What would you like to work on?
 ```
