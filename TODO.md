@@ -27,7 +27,11 @@
 [] aura installs with a README (like beads)
 [] move specs inside of .aura
 
-# Slash Commands
+## Sunday
+[x] Read cyborg commands
+[] Design workflow
+
+# Aura Slash Commands
 Is my frontmatter good? Do slash commands take allowed-tools???
 
 # AGENTS.md / CLAUDE.md
@@ -160,3 +164,25 @@ Global Flags:
       --sandbox                 Sandbox mode: disables daemon and auto-sync
   -v, --verbose                 Enable verbose/debug output
 ```
+
+# Cyborg Slash Commands
+## cyborg.status
+Should I have agent read the entire notes.jsonl file just to get status? This could potentially contain ALOT of information!?!
+
+Prescripted workflows for simple state analysis may be nicer.
+
+This is important (more important) for the step that "counts" notes on local disk and compares to jsonl. We need deterministic scripts for things like counting
+
+LET BE VERY CLEAR WHERE NOTES ARE STORED ACROSS ALL AGENT INSTRUCTIONS!!!
+
+
+## cyborg.scan
+This is too similar to status. We should just combine the two commands.
+
+Again need deterministic scripts
+
+## cyborg.process
+This is JUST like aura.process. If we plan to utilize aura in cyborg as a dependency lets just wrap aura.process with special instructions to use the cyborg brain.
+
+## cyborg.regenerate
+This needs to be dialed in. This is one of the KEY features here. Also lets get fontmatter write for really good obsidian experience
