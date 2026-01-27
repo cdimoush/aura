@@ -48,7 +48,7 @@ Record audio from your microphone, automatically transcribe it, and save to `.au
    - Generate a descriptive title
    - Save to `.aura/queue/<title>/` with `audio.wav` and `transcript.txt`
 
-3. After recording, the memo is ready for processing with `/aura.process` or `/aura.act`.
+3. After recording, the memo is ready for processing with `/aura.act`.
 
 ## Output Structure
 
@@ -65,7 +65,7 @@ Each memo is saved as a directory:
 - **Stop early**: Press Ctrl+C to stop recording before the duration limit
 - **Custom duration**: Use `--duration 60` for a 60-second max
 - **Custom queue dir**: Use `--queue-dir path/to/dir` to override default location
-- **Batch process**: Record multiple memos, then process all with `/aura.process`
+- **Batch process**: Record multiple memos, then process all with `/aura.act` (no arguments)
 
 ## Error Handling
 

@@ -1,24 +1,55 @@
 ---
-allowed-tools: Bash(python:*), Bash(mkdir:*), Bash(mv:*), Bash(date:*), Read, Write, Edit, Glob, Grep, WebFetch, WebSearch
+allowed-tools: Bash(python:*), Bash(mkdir:*), Bash(mv:*), Bash(date:*), Bash(ls:*), Read, Write, Edit, Glob, Grep, WebFetch, WebSearch
 description: Transcribe audio and act on the request
-argument-hint: <audio-file-path>
+argument-hint: [audio-file-path]
 ---
 
 # Act on Audio
 
-Transcribe the provided audio file, generate an intelligent title, and execute the request spoken within it.
+Transcribe audio file(s), generate intelligent titles, and execute requests spoken within them.
 
 ## Prerequisites
 
 - `OPENAI_API_KEY` environment variable must be set
 - Dependencies installed: `pip install -r .aura/scripts/requirements.txt`
 
+## Step 0: Determine Input Mode
+
+Check `$ARGUMENTS`:
+
+- **If a file path is provided**: Process that single audio file (go to Step 1)
+- **If no argument**: Process all audio files in `.aura/queue/` (go to Step 0a)
+
+### Step 0a: Queue Processing Mode
+
+List all audio files in the queue:
+
+```bash
+ls -1 .aura/queue/*.wav .aura/queue/*.m4a .aura/queue/*.mp3 2>/dev/null
+```
+
+If no files found:
+```
+No audio files found in .aura/queue/
+
+Record a new memo with: /aura.record
+```
+
+Otherwise, process each file by repeating Steps 1-8 for each audio file. Track results and show a summary at the end:
+
+```
+Processed 3 audio files:
+  1. feature-idea_2026-01-27_14-30-22 -> .aura/output/feature-idea_2026-01-27_14-30-22/
+  2. bug-report_2026-01-27_14-32-15 -> .aura/output/bug-report_2026-01-27_14-32-15/
+  3. meeting-notes_2026-01-27_14-35-00 -> .aura/output/meeting-notes_2026-01-27_14-35-00/
+```
+
 ## Step 1: Transcribe the Audio
 
 Use the local transcription script:
 
 ```bash
-python .aura/scripts/transcribe.py "$ARGUMENTS"
+python .aura/scripts/transcribe.py "$AUDIO_FILE"
 ```
 
 Save the full transcription text for use in subsequent steps.

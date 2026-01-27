@@ -108,8 +108,7 @@ aura check
 |---------|-------------|---------|
 | `/aura.record` | Record voice memo from microphone | `/aura.record 60` (60s max) |
 | `/aura.transcribe` | Transcribe audio file to text | `/aura.transcribe audio.m4a` |
-| `/aura.act` | Full pipeline: transcribe + act | `/aura.act .aura/queue/memo.wav` |
-| `/aura.process` | Process voice memos from queue to output | `/aura.process` |
+| `/aura.act` | Full pipeline: transcribe + act on single file or queue | `/aura.act .aura/queue/memo.wav` or `/aura.act` |
 
 ### Planning Commands (aura.*)
 
@@ -156,7 +155,6 @@ your-project/
 │       ├── aura.feature.md
 │       ├── aura.implement.md
 │       ├── aura.prime.md
-│       ├── aura.process.md
 │       ├── aura.record.md
 │       ├── aura.ticket-dev.md
 │       ├── aura.tickets.md

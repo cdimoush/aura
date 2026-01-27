@@ -15,8 +15,7 @@ def main():
 @main.command()
 @click.option("--force", is_flag=True, help="Overwrite existing files")
 @click.option("--dry-run", is_flag=True, help="Show what would be created")
-@click.option("--no-beads", is_flag=True, help="Skip beads initialization")
-def init(force, dry_run, no_beads):
+def init(force, dry_run):
     """Initialize Aura in current directory."""
     if dry_run:
         click.echo("Dry run - no files will be created:\n")
@@ -24,7 +23,7 @@ def init(force, dry_run, no_beads):
         click.echo("Initializing Aura...\n")
 
     try:
-        results = init_aura(force=force, dry_run=dry_run, no_beads=no_beads)
+        results = init_aura(force=force, dry_run=dry_run)
     except BeadsNotFoundError as e:
         click.echo(str(e), err=True)
         raise SystemExit(1)
@@ -55,6 +54,13 @@ def check():
     import os
     import shutil
     from pathlib import Path
+
+    # Verify .aura directory exists first
+    aura_dir = Path(".aura")
+    if not aura_dir.exists():
+        click.echo("Error: .aura directory not found.", err=True)
+        click.echo("Run 'aura init' to initialize Aura in this directory.", err=True)
+        raise SystemExit(1)
 
     # Load .aura/.env if it exists
     env_file = Path(".aura/.env")
