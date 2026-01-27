@@ -4,7 +4,7 @@ Agentic workflow layer for codebases. Voice-driven development from idea to impl
 
 ## What is Aura?
 
-Aura scaffolds your repository with Claude Code slash commands that enable a voice-first development workflow:
+Aura scaffolds your repository with Claude Code skills that enable a voice-first development workflow:
 
 ```
 Voice Memo → Transcription → Planning → Tickets → Implementation
@@ -15,8 +15,9 @@ Instead of writing code manually, you speak your ideas into voice memos. Aura tr
 **Key Features:**
 - Voice memo transcription via OpenAI Whisper API
 - Intelligent title generation for organized output
-- Epic and feature planning with structured specs
+- Epic planning with structured task dependencies
 - Beads integration for dependency-aware task management
+- Automatic context injection via SessionStart hook
 - Self-contained scripts that work in any repository
 
 ## Installation
@@ -33,9 +34,6 @@ Instead of writing code manually, you speak your ideas into voice memos. Aura tr
 - **ffmpeg**: Audio processing (for transcription)
   - macOS: `brew install ffmpeg`
   - Ubuntu: `sudo apt-get install ffmpeg`
-- **sox** (optional): For recording from CLI
-  - macOS: `brew install sox`
-  - Ubuntu: `sudo apt-get install sox libsox-fmt-all`
 
 ### Install Aura
 
@@ -57,8 +55,9 @@ aura init
 ```
 
 This creates:
-- `.aura/` - Configuration and scripts
-- `.claude/commands/` - Slash commands for Claude Code
+- `.aura/` - Configuration, scripts, and memo directories
+- `.claude/skills/` - Slash command skills for Claude Code
+- `.claude/settings.json` - SessionStart hook for automatic context
 - `.beads/` - Task tracking (if beads CLI available)
 
 ### 2. Set Up Environment
@@ -84,51 +83,33 @@ uv pip install -r .aura/scripts/requirements.txt
 # Check aura installation
 aura check
 
-# List available commands in Claude Code
-# (In Claude Code session)
-/aura.prime
+# Start Claude Code - context auto-loads via SessionStart hook
 ```
 
-### 4. Record and Process a Voice Memo
+### 4. Process a Voice Memo
 
 ```bash
-# In Claude Code session:
-/aura.record           # Start recording
-# ... speak your idea ...
-# Press Ctrl+C to stop
+# Record a voice memo outside Claude (phone, recorder app, etc.)
+# Save as .aura/memo/queue/<title>/audio.wav
 
-/aura.act .aura/queue/memo_*.wav   # Process the recording
+# In Claude Code session:
+/aura.process_memo   # Process all queued memos
 ```
 
-## Commands Reference
+## Skills Reference
 
-### Voice Commands (aura.*)
+Aura provides 4 focused skills:
 
-| Command | Description | Example |
-|---------|-------------|---------|
-| `/aura.record` | Record voice memo from microphone | `/aura.record 60` (60s max) |
-| `/aura.transcribe` | Transcribe audio file to text | `/aura.transcribe audio.m4a` |
-| `/aura.act` | Full pipeline: transcribe + act on single file or queue | `/aura.act .aura/queue/memo.wav` or `/aura.act` |
+| Skill | Description | Example |
+|-------|-------------|---------|
+| `/aura.process_memo` | Process all voice memos from queue | `/aura.process_memo` |
+| `/aura.epic` | Break a vision into an epic with tasks | `/aura.epic "user authentication system"` |
+| `/aura.create_beads` | Convert epic tasks to beads tickets | `/aura.create_beads .aura/epics/user-auth.md` |
+| `/aura.implement` | Implement beads in dependency order | `/aura.implement .aura/epics/user-auth.md` |
 
-### Planning Commands (aura.*)
+### Context Injection
 
-| Command | Description | Example |
-|---------|-------------|---------|
-| `/aura.epic` | Create epic document with phases | `/aura.epic user-auth-system` |
-| `/aura.feature` | Plan a feature with spec | `/aura.feature add-dark-mode` |
-| `/aura.tickets` | Convert epic to beads tasks | `/aura.tickets specs/epic-auth/` |
-| `/aura.implement` | Implement from ticket or spec | `/aura.implement abc-123` |
-| `/aura.ticket-dev` | Spawn autonomous agent for ticket | `/aura.ticket-dev abc-123 --parallel` |
-| `/aura.prime` | Load project context | `/aura.prime` |
-
-### Task Commands (beads.*)
-
-| Command | Description | Example |
-|---------|-------------|---------|
-| `/beads.status` | Project task overview | `/beads.status` |
-| `/beads.ready` | Show available tasks | `/beads.ready` |
-| `/beads.start` | Start working on task | `/beads.start abc-123` |
-| `/beads.done` | Mark task complete | `/beads.done abc-123` |
+Aura automatically injects context at session start via Claude Code's hook system. No need to run a prime command - the aura context loads automatically when you start a session.
 
 ## Directory Structure
 
@@ -137,33 +118,30 @@ After `aura init`:
 ```
 your-project/
 ├── .aura/
-│   ├── config.md              # Aura configuration (future)
-│   ├── .gitignore             # Ignores queue/, output/, .env, .venv/
-│   ├── .venv/                 # Virtual environment for scripts
-│   ├── queue/                 # Audio files waiting to be processed
-│   ├── output/                # Processed memo outputs
+│   ├── aura.md               # Context file (auto-injected at session start)
+│   ├── .gitignore            # Ignores memo contents, .env, .venv/
+│   ├── .venv/                # Virtual environment for scripts
+│   ├── memo/
+│   │   ├── queue/            # Voice memos waiting to be processed
+│   │   ├── processed/        # Successfully processed memos
+│   │   └── failed/           # Failed processing attempts
+│   ├── epics/                # Epic planning documents
 │   └── scripts/
-│       ├── transcribe.py      # OpenAI Whisper transcription
-│       ├── generate_title.py  # Intelligent title generation
-│       ├── record_memo.py     # CLI recording via sox
-│       └── requirements.txt   # Script dependencies
-├── .beads/                    # Task tracking (if beads available)
-├── .claude/
-│   └── commands/
-│       ├── aura.act.md
-│       ├── aura.epic.md
-│       ├── aura.feature.md
-│       ├── aura.implement.md
-│       ├── aura.prime.md
-│       ├── aura.record.md
-│       ├── aura.ticket-dev.md
-│       ├── aura.tickets.md
-│       ├── aura.transcribe.md
-│       ├── beads.done.md
-│       ├── beads.ready.md
-│       ├── beads.start.md
-│       └── beads.status.md
-└── specs/                     # Created by planning commands
+│       ├── transcribe.py     # OpenAI Whisper transcription
+│       ├── generate_title.py # Intelligent title generation
+│       └── requirements.txt  # Script dependencies
+├── .beads/                   # Task tracking (if beads available)
+└── .claude/
+    ├── settings.json         # SessionStart hook configuration
+    └── skills/
+        ├── aura.process_memo/
+        │   └── SKILL.md
+        ├── aura.epic/
+        │   └── SKILL.md
+        ├── aura.create_beads/
+        │   └── SKILL.md
+        └── aura.implement/
+            └── SKILL.md
 ```
 
 ## Configuration
@@ -176,94 +154,61 @@ your-project/
 | `AURA_TRANSCRIPTION_MODEL` | No | Override transcription model (default: gpt-4o-mini-transcribe) |
 | `AURA_TITLE_MODEL` | No | Override title model (default: gpt-4o-mini) |
 
-### .aura/config.md (Future)
-
-Configuration file for project-specific settings. Not yet implemented.
-
 ## Workflow Examples
 
-### Example 1: Feature from Voice Memo
+### Example 1: Voice Memo to Code
 
 ```bash
-# Record your idea
-/aura.record
-# "I want to add a dark mode toggle to the settings page..."
+# Record your idea (phone, desktop recorder, etc.)
+# Save to: .aura/memo/queue/add-dark-mode/audio.wav
 
-# Process the recording
-/aura.act .aura/queue/memo_20260118_143022.wav
-# → Creates .aura/output/dark-mode-toggle_2026-01-18_14-30-22/
-# → README.md with transcription and deliverables
-
-# Create a formal plan
-/aura.feature "Add dark mode toggle based on voice memo"
-# → Creates specs/dark-mode-toggle.md
-
-# Convert to tasks
-/aura.tickets specs/dark-mode-toggle.md
-# → Creates beads tasks with dependencies
-
-# Start implementation
-/beads.ready
-/aura.implement abc-123
+# In Claude Code session:
+/aura.process_memo
+# → Transcribes audio
+# → Acts on your request
+# → Moves to .aura/memo/processed/add-dark-mode_20260127_143022/
 ```
 
 ### Example 2: Epic Planning
 
 ```bash
-# Create high-level epic
+# Create a structured epic from a vision
 /aura.epic "User authentication system with OAuth and MFA"
-# → Creates specs/epic-user-auth/README.md with phases
+# → Creates .aura/epics/user-authentication-system.md with phases and tasks
 
-# Convert to tasks
-/aura.tickets specs/epic-user-auth
-# → Creates beads tasks for each spec
+# Convert to trackable tickets
+/aura.create_beads .aura/epics/user-authentication-system.md
+# → Creates beads tasks with dependencies
 
-# Work through tasks
-/beads.ready
-/aura.implement first-task-id
+# Implement in order
+/aura.implement .aura/epics/user-authentication-system.md
+# → Works through tasks respecting dependencies
 ```
 
-### Example 3: Parallel Ticket Development
+### Example 3: Using Beads Directly
 
 ```bash
 # Check ready tasks
-/beads.ready
-# → Shows: abc-001, abc-002, abc-003 (all ready)
+bd ready
 
-# Launch agents in parallel
-/aura.ticket-dev abc-001 --parallel
-/aura.ticket-dev abc-002 --parallel
-/aura.ticket-dev abc-003 --parallel
-# → 3 agents working simultaneously
+# Start working on a task
+bd update <id> --status in_progress
 
-# Check progress
-/tasks
-# → Shows all running agents and their status
-
-# When agents complete, they report results and close tickets
+# Complete a task
+bd close <id> --reason "Implemented feature"
 ```
 
 ## Cross-Project Recording
 
-Each Aura-initialized project is fully self-contained for voice recording and transcription.
+Each Aura-initialized project is fully self-contained for voice processing.
 
-### How It Works
+### Voice Memo Format
 
-When you run `aura init` in a project, it copies all scripts to that project's `.aura/scripts/` directory. Each project manages its own:
-- Recording scripts
-- Audio queue (`.aura/queue/`)
-- Python dependencies (`.aura/.venv/`)
-- Output directory (`.aura/output/`)
-
-### System Dependencies
-
-SoX (for recording) must be installed system-wide:
-```bash
-# macOS
-brew install sox
-
-# Ubuntu
-sudo apt-get install sox libsox-fmt-all
+Place voice memos in the queue with this structure:
+```
+.aura/memo/queue/<title>/
+├── audio.wav    # or .m4a
+└── transcript.txt  # optional - created if missing
 ```
 
 ### Per-Project Setup
@@ -284,37 +229,20 @@ cp .aura/.env.example .aura/.env
 # Edit .aura/.env and add your OPENAI_API_KEY
 ```
 
-### Recording Workflow
-
-From any Aura-initialized project:
-```bash
-cd your-project
-source .aura/.venv/bin/activate
-python .aura/scripts/record_memo.py
-# Audio saved to your-project/.aura/queue/
-```
-
-Or use the Claude Code command:
-```bash
-/aura.record
-```
-
 ### Multiple Projects
 
 Each project operates independently:
 ```bash
 # Project A
 cd ~/projects/app-a
-python .aura/scripts/record_memo.py
-# Records to ~/projects/app-a/.aura/queue/
+# Voice memos go to ~/projects/app-a/.aura/memo/queue/
 
 # Project B
 cd ~/projects/app-b
-python .aura/scripts/record_memo.py
-# Records to ~/projects/app-b/.aura/queue/
+# Voice memos go to ~/projects/app-b/.aura/memo/queue/
 ```
 
-To update scripts after an Aura upgrade:
+To update skills after an Aura upgrade:
 ```bash
 cd your-project
 aura init --force
@@ -331,8 +259,6 @@ git init
 aura init
 aura check
 ```
-
-Expected: 18 files created, all prerequisites pass (except OPENAI_API_KEY which is optional).
 
 ## Troubleshooting
 
@@ -352,52 +278,45 @@ source .aura/.venv/bin/activate
 uv pip install -r .aura/scripts/requirements.txt
 ```
 
-### "sox/rec command not found"
+### Skills not appearing in Claude Code
 
-Install sox for recording:
-- macOS: `brew install sox`
-- Ubuntu: `sudo apt-get install sox libsox-fmt-all`
-
-### Commands not appearing in Claude Code
-
-Ensure you're in a directory with `.claude/commands/`:
+Ensure you're in a directory with `.claude/skills/`:
 ```bash
-ls .claude/commands/*.md
+ls .claude/skills/*/SKILL.md
 ```
 
 If missing, run `aura init`.
 
 ## Development
 
-Aura uses itself for development. The `.aura/` and `.claude/commands/` at the repo root are:
+Aura uses itself for development. The `.aura/` and `.claude/skills/` at the repo root are:
 
 1. **Working copies** - Used when developing aura with Claude Code
 2. **Template sources** - Copied to target repos by `aura init`
 
-This means changes to commands are immediately testable without running init.
+This means changes to skills are immediately testable without running init.
 
 ```bash
-# Edit a command
-vim .claude/commands/aura.act.md
+# Edit a skill
+vim .claude/skills/aura.process_memo/SKILL.md
 
 # Test immediately in Claude Code
-/aura.act test.wav
+/aura.process_memo
 ```
 
 ## Future Work
 
 - **`aura check` enhancements**: More detailed validation and diagnostics
-- **`.aura/config.md`**: Project-specific configuration file
-- **Plugin system**: Custom commands and workflows
+- **Plugin system**: Custom skills and workflows
 - **`uv tool install`**: Global installation support
 - **Multi-agent support**: Cursor, Copilot, and other AI coding tools
-- **`aura update`**: Selective script updates without full re-init
+- **`aura update`**: Selective skill updates without full re-init
 
 ## Contributing
 
 1. Fork the repository
 2. Create a feature branch
-3. Edit commands in `.claude/commands/` or scripts in `.aura/scripts/`
+3. Edit skills in `.claude/skills/` or scripts in `.aura/scripts/`
 4. Test locally - changes are live for development
 5. Submit a pull request
 

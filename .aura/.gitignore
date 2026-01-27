@@ -1,7 +1,14 @@
 # .aura/.gitignore
-# Audio and output files (don't commit)
-queue/
-output/
+# Memo queue contents (don't commit audio/transcripts)
+memo/queue/*
+!memo/queue/.gitkeep
+memo/processed/*
+!memo/processed/.gitkeep
+memo/failed/*
+!memo/failed/.gitkeep
+
+# Epic files (user content, optionally commit)
+# epics/ - not ignored by default, user choice
 
 # Environment
 .env

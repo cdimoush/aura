@@ -45,7 +45,7 @@ def init(force, dry_run):
         created = len(results["created"])
         skipped = len(results["skipped"])
         click.echo(f"\nAura initialized! ({created} created, {skipped} skipped)")
-        click.echo("Run /aura.prime in Claude Code to get started.")
+        click.echo("Start Claude Code - aura context loads automatically via SessionStart hook.")
 
 
 @main.command()
@@ -114,8 +114,8 @@ def format_size(bytes: int) -> str:
 @main.command()
 @click.option("--force", is_flag=True, help="Skip confirmation prompt")
 @click.option("--dry-run", is_flag=True, help="Show what would be deleted")
-@click.option("--keep-output", is_flag=True, help="Preserve .aura/output directory")
-def remove(force, dry_run, keep_output):
+@click.option("--keep-memos", is_flag=True, help="Preserve .aura/memo directory")
+def remove(force, dry_run, keep_memos):
     """Remove Aura from current directory."""
     import shutil
     from pathlib import Path
@@ -126,19 +126,20 @@ def remove(force, dry_run, keep_output):
     # .aura directory
     aura_dir = Path(".aura")
     if aura_dir.exists():
-        if keep_output:
-            # List individual subdirs except output
+        if keep_memos:
+            # List individual subdirs except memo
             for item in aura_dir.iterdir():
-                if item.name != "output":
+                if item.name != "memo":
                     targets.append(item)
         else:
             targets.append(aura_dir)
 
-    # .claude/commands aura and beads files
-    commands_dir = Path(".claude/commands")
-    if commands_dir.exists():
-        for pattern in ["aura.*.md", "beads.*.md"]:
-            targets.extend(commands_dir.glob(pattern))
+    # .claude/skills aura directories
+    skills_dir = Path(".claude/skills")
+    if skills_dir.exists():
+        for item in skills_dir.iterdir():
+            if item.is_dir() and item.name.startswith("aura."):
+                targets.append(item)
 
     # .beads directory
     beads_dir = Path(".beads")
