@@ -4,9 +4,9 @@ This document provides context for Claude Code agents working on the Aura projec
 
 ## Project Overview
 
-Aura is an agentic workflow layer that scaffolds repositories with Claude Code skills for voice-driven development. It enables a workflow where developers speak ideas into voice memos, which are transcribed and turned into structured plans and implementations.
+Aura is agentic scaffolding that wraps codebases with Claude Code skills, beads-based issue tracking, and voice memo capture. It makes life easier for both agents and human developers.
 
-**Core Philosophy**: Remove friction between ideas and code. Voice is faster than typing.
+**Core Philosophy**: Remove friction between ideas and code.
 
 ## Architecture
 
@@ -17,7 +17,7 @@ aura/
 ├── .aura/                   # Working copy (dogfood) AND template source
 │   ├── .gitignore           # Ignores memo/*, .env
 │   ├── .env.example         # Example environment file
-│   ├── aura.md              # Context file (injected at session start)
+│   ├── AURA.md              # Context file (injected at session start)
 │   ├── memo/
 │   │   ├── queue/           # Pending memos
 │   │   ├── processed/       # Successfully processed
@@ -273,7 +273,7 @@ uv run aura init --dry-run
 | `src/aura/config.py` | Configuration constants |
 | `.claude/skills/*/SKILL.md` | Skill sources (dogfood + template) |
 | `.claude/settings.json` | SessionStart hook configuration |
-| `.aura/aura.md` | Context file (injected at session start) |
+| `.aura/AURA.md` | Context file (injected at session start) |
 | `.aura/scripts/*.py` | Portable Python scripts (dogfood + template) |
 | `README.md` | User documentation |
 | `CLAUDE.md` | This file - agent guide |
@@ -316,14 +316,6 @@ Skills provide a cleaner structure:
 - Matches Claude Code's newer skills system
 - Supports `disable-model-invocation` for explicit control
 
-### Why SessionStart Hook?
-
-Automatic context injection via hook:
-- No need for users to run `/prime` manually
-- Context loads at every session start
-- Configured in `.claude/settings.json`
-- Merges with existing user settings
-
 ### Why Self-Contained Scripts?
 
 Scripts in `.aura/scripts/` don't import from aura or whisper packages because:
@@ -337,10 +329,6 @@ Templates are copied (not symlinked) because:
 1. Target repos shouldn't depend on aura installation location
 2. Users can customize their copies
 3. Works across different machines/environments
-
-### Why Beads Integration?
-
-Beads provides dependency-aware task management that pairs well with epic/feature planning. It's optional - aura works without it, but the workflow is enhanced with it.
 
 ## Troubleshooting
 
@@ -373,20 +361,8 @@ Check settings.json has the hook:
 cat .claude/settings.json
 ```
 
-Should contain:
-```json
-{
-  "hooks": {
-    "SessionStart": [{
-      "hooks": [{
-        "type": "command",
-        "command": "cat \"$CLAUDE_PROJECT_DIR\"/.aura/aura.md 2>/dev/null || true"
-      }]
-    }]
-  }
-}
-```
+Should contain a `SessionStart` hook that cats `.aura/AURA.md` and runs `bd prime`.
 
 ---
 
-*Last updated: 2026-01-27*
+*Last updated: 2026-01-29*

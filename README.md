@@ -1,24 +1,17 @@
 # Aura
 
-Agentic workflow layer for codebases. Voice-driven development from idea to implementation.
+Agentic scaffolding for codebases. Skills, issue tracking, and voice capture — wired together.
 
 ## What is Aura?
 
-Aura scaffolds your repository with Claude Code skills that enable a voice-first development workflow:
-
-```
-Voice Memo → Transcription → Planning → Tickets → Implementation
-```
-
-Instead of writing code manually, you speak your ideas into voice memos. Aura transcribes them, creates structured plans, generates actionable tickets, and helps implement them step by step.
+Aura wraps your repository with Claude Code skills and beads-based issue tracking to make planning and implementing easier for both agents and humans. Voice memos provide optional hands-free idea capture.
 
 **Key Features:**
-- Voice memo transcription via OpenAI Whisper API
-- Intelligent title generation for organized output
-- Epic planning with structured task dependencies
-- Beads integration for dependency-aware task management
-- Automatic context injection via SessionStart hook
-- Self-contained scripts that work in any repository
+- **Beads integration** — dependency-aware issue tracking via `bd` CLI
+- **Epic planning** — break visions into phased, dependency-mapped tasks
+- **Multi-agent ready** — beads carry context between agents via comments and dependency graphs
+- **Voice memo capture** — record, transcribe, and queue ideas via OpenAI Whisper
+- **Automatic context injection** — SessionStart hook loads project context + `bd prime`
 
 ## Installation
 
@@ -27,7 +20,7 @@ Instead of writing code manually, you speak your ideas into voice memos. Aura tr
 - **uv**: Python package manager - [Install uv](https://docs.astral.sh/uv/getting-started/installation/)
 - **git**: Version control
 - **Claude Code**: [Install Claude Code](https://claude.ai/claude-code)
-- **beads**: Task management CLI - [GitHub](https://github.com/steveyegge/beads)
+- **beads**: Issue tracking CLI (required) - [GitHub](https://github.com/steveyegge/beads)
   ```bash
   npm install -g @beads/bd
   ```
@@ -130,7 +123,7 @@ After `aura init`:
 ```
 your-project/
 ├── .aura/
-│   ├── aura.md               # Context file (auto-injected at session start)
+│   ├── AURA.md               # Context file (auto-injected at session start)
 │   ├── .gitignore            # Ignores memo contents, .env, .venv/
 │   ├── .venv/                # Virtual environment for scripts
 │   ├── memo/
@@ -337,12 +330,21 @@ vim .claude/skills/aura.process_memo/SKILL.md
 /aura.process_memo
 ```
 
+## Design Decisions
+
+### Why Beads?
+
+Beads provides dependency-aware issue tracking that agents can navigate autonomously. An agent runs `bd ready`, picks a bead, reads comments left by prior agents, does the work, and closes it — unlocking downstream beads. No orchestrator needed. When verification fails, `bd reopen` sends work back upstream with a comment explaining what broke.
+
+### Why SessionStart Hook?
+
+Automatic context injection means no manual priming. Every Claude Code session starts with project context (`.aura/AURA.md`) and beads workflow guidance (`bd prime`) loaded automatically. Configured in `.claude/settings.json` and merged with existing user settings by `aura init`.
+
 ## Future Work
 
 - **`aura check` enhancements**: More detailed validation and diagnostics
 - **Plugin system**: Custom skills and workflows
 - **`uv tool install`**: Global installation support
-- **Multi-agent support**: Cursor, Copilot, and other AI coding tools
 - **`aura update`**: Selective skill updates without full re-init
 
 ## Contributing
