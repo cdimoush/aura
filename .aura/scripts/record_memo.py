@@ -5,7 +5,7 @@ Usage:
     python .aura/scripts/record_memo.py [--max-duration SECONDS]
 
 Records audio via sox, transcribes via OpenAI Whisper, generates a title,
-and saves to .aura/memo/queue/<title>/.
+and saves to .aura/visions/queue/<title>/.
 
 Requirements:
     - sox installed (brew install sox / apt install sox)
@@ -40,25 +40,25 @@ def check_sox_installed() -> bool:
     return shutil.which("sox") is not None
 
 
-def get_aura_memo_dir() -> Path:
-    """Get the .aura/memo directory path, creating it if needed."""
+def get_aura_visions_dir() -> Path:
+    """Get the .aura/visions directory path, creating it if needed."""
     # Try to find .aura directory by walking up from cwd
     cwd = Path.cwd()
     for parent in [cwd] + list(cwd.parents):
         aura_dir = parent / ".aura"
         if aura_dir.exists():
-            memo_dir = aura_dir / "memo"
-            return memo_dir
+            visions_dir = aura_dir / "visions"
+            return visions_dir
 
-    # Fallback to cwd/.aura/memo
-    return cwd / ".aura" / "memo"
+    # Fallback to cwd/.aura/visions
+    return cwd / ".aura" / "visions"
 
 
-def ensure_directories(memo_dir: Path) -> None:
+def ensure_directories(visions_dir: Path) -> None:
     """Ensure queue/, processed/, and failed/ directories exist."""
-    (memo_dir / "queue").mkdir(parents=True, exist_ok=True)
-    (memo_dir / "processed").mkdir(parents=True, exist_ok=True)
-    (memo_dir / "failed").mkdir(parents=True, exist_ok=True)
+    (visions_dir / "queue").mkdir(parents=True, exist_ok=True)
+    (visions_dir / "processed").mkdir(parents=True, exist_ok=True)
+    (visions_dir / "failed").mkdir(parents=True, exist_ok=True)
 
 
 def record_audio(output_path: Path, max_duration: int = DEFAULT_MAX_DURATION) -> bool:
@@ -191,13 +191,13 @@ def get_fallback_title() -> str:
     return f"memo-{timestamp}"
 
 
-def save_memo(audio_path: Path, transcript: str | None, memo_dir: Path) -> tuple[Path, bool]:
+def save_memo(audio_path: Path, transcript: str | None, visions_dir: Path) -> tuple[Path, bool]:
     """Save memo to appropriate directory.
 
     Args:
         audio_path: Path to the recorded audio file
         transcript: Transcription text, or None if transcription failed
-        memo_dir: Base memo directory (.aura/memo)
+        visions_dir: Base visions directory (.aura/visions)
 
     Returns:
         Tuple of (final_dir, success) where success indicates if saved to queue/
@@ -205,17 +205,17 @@ def save_memo(audio_path: Path, transcript: str | None, memo_dir: Path) -> tuple
     if transcript:
         # Success path: generate title and save to queue/
         title = generate_title(transcript)
-        target_dir = memo_dir / "queue" / title
+        target_dir = visions_dir / "queue" / title
 
         # Handle duplicate titles
         if target_dir.exists():
             timestamp = datetime.now().strftime("%H%M%S")
             title = f"{title}-{timestamp}"
-            target_dir = memo_dir / "queue" / title
+            target_dir = visions_dir / "queue" / title
     else:
         # Failure path: save to failed/ with timestamp title
         title = get_fallback_title()
-        target_dir = memo_dir / "failed" / title
+        target_dir = visions_dir / "failed" / title
 
     # Create directory and move/save files
     target_dir.mkdir(parents=True, exist_ok=True)
@@ -274,9 +274,9 @@ def main():
         print("Set it in .aura/.env or export it: export OPENAI_API_KEY=your-key", file=sys.stderr)
         sys.exit(1)
 
-    # Get memo directory and ensure structure exists
-    memo_dir = get_aura_memo_dir()
-    ensure_directories(memo_dir)
+    # Get visions directory and ensure structure exists
+    visions_dir = get_aura_visions_dir()
+    ensure_directories(visions_dir)
 
     # Create temp file for recording
     with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
@@ -294,11 +294,11 @@ def main():
         transcript = transcribe_audio(temp_audio_path)
 
         # Step 3: Save memo (handles both success and failure cases)
-        final_dir, success = save_memo(temp_audio_path, transcript, memo_dir)
+        final_dir, success = save_memo(temp_audio_path, transcript, visions_dir)
 
         if success:
             print(f"\n✓ Memo saved to: {final_dir}", file=sys.stderr)
-            print(f"  Run '/aura.process_memo' to process it.", file=sys.stderr)
+            print(f"  Run '/aura.process_visions' to process it.", file=sys.stderr)
             sys.exit(0)
         else:
             print(f"\n⚠ Transcription failed. Audio saved to: {final_dir}", file=sys.stderr)

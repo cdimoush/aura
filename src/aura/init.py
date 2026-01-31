@@ -44,19 +44,28 @@ def get_template_files():
     """Return list of (src, dst) tuples for all template files."""
     files = []
 
-    # .aura/ contents (except memo/, epics/ which are created empty)
+    # .aura/ contents (except visions/, plans/ which are created empty)
     aura_source = AURA_ROOT / ".aura"
     if aura_source.exists():
         for src in aura_source.glob("**/*"):
             if src.is_file() and src.name != ".gitkeep":
                 rel = src.relative_to(aura_source)
-                # Skip blacklisted directories (memo, epics)
+                # Skip blacklisted directories (visions, plans)
                 if rel.parts and rel.parts[0] in DOT_AURA_CFG["blacklist"]:
                     continue
                 # Skip .env file (contains secrets)
                 if rel.name == ".env" and not DOT_AURA_CFG["copy_env"]:
                     continue
                 dst = Path(".aura") / rel
+                files.append((src, dst))
+
+    # .claude/templates/ contents
+    templates_source = AURA_ROOT / ".claude" / "templates"
+    if templates_source.exists():
+        for src in templates_source.glob("**/*"):
+            if src.is_file():
+                rel = src.relative_to(templates_source)
+                dst = Path(".claude/templates") / rel
                 files.append((src, dst))
 
     # .claude/skills/ contents (subdirectories with SKILL.md)

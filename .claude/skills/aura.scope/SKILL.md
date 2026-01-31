@@ -18,7 +18,7 @@ The argument is a vision description - what the user wants to achieve.
 
 1. **Discover templates** - List available templates:
    ```bash
-   ls .aura/templates/
+   ls .claude/templates/
    ```
    Read each template to understand what sections it expects.
 
@@ -32,7 +32,7 @@ The argument is a vision description - what the user wants to achieve.
 
 4. **Populate template** - Fill in every section of the template with findings from research. Replace all `<placeholder>` markers with real content.
 
-5. **Write scope file** - Save to `.aura/epics/<kebab-case-name>/scope.md`
+5. **Write scope file** - Save to `.aura/plans/queue/<kebab-case-name>/scope.md`
    - Generate name from the vision (max 50 chars, lowercase, hyphens)
    - Create the subdirectory if needed
 

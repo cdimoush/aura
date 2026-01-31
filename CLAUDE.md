@@ -4,7 +4,7 @@ This document provides context for Claude Code agents working on the Aura projec
 
 ## Project Overview
 
-Aura is agentic scaffolding that wraps codebases with Claude Code skills, beads-based issue tracking, and voice memo capture. It makes life easier for both agents and human developers.
+Aura is agentic scaffolding that wraps codebases with Claude Code skills, beads-based issue tracking, and vision capture (text + audio). It makes life easier for both agents and human developers.
 
 **Core Philosophy**: Remove friction between ideas and code.
 
@@ -15,14 +15,16 @@ Aura is agentic scaffolding that wraps codebases with Claude Code skills, beads-
 ```
 aura/
 ├── .aura/                   # Working copy (dogfood) AND template source
-│   ├── .gitignore           # Ignores memo/*, .env
+│   ├── .gitignore           # Ignores visions/*, .env
 │   ├── .env.example         # Example environment file
 │   ├── AURA.md              # Context file (injected at session start)
-│   ├── memo/
-│   │   ├── queue/           # Pending memos
+│   ├── visions/
+│   │   ├── queue/           # Text files OR audio+transcript dirs
 │   │   ├── processed/       # Successfully processed
 │   │   └── failed/          # Failed processing
-│   ├── epics/               # Epic planning documents
+│   ├── plans/
+│   │   ├── queue/           # Scoped plans awaiting execution
+│   │   └── processed/       # Executed/completed plans
 │   └── scripts/
 │       ├── record_memo.py   # Record → transcribe → title → queue
 │       ├── transcribe.py    # OpenAI Whisper transcription
@@ -30,14 +32,13 @@ aura/
 │       └── requirements.txt  # Script dependencies
 ├── .claude/
 │   ├── settings.json        # SessionStart hook configuration
+│   ├── templates/           # Plan templates (feature.md, bug.md)
 │   └── skills/              # Working copy (dogfood) AND template source
-│       ├── aura.process_memo/
+│       ├── aura.process_visions/
 │       │   └── SKILL.md
-│       ├── aura.epic/
+│       ├── aura.scope/
 │       │   └── SKILL.md
-│       ├── aura.create_beads/
-│       │   └── SKILL.md
-│       └── aura.implement/
+│       └── aura.execute/
 │           └── SKILL.md
 ├── src/aura/
 │   ├── __init__.py          # Package init
@@ -48,7 +49,7 @@ aura/
 └── README.md                # User documentation
 ```
 
-**Key insight**: The `.aura/` and `.claude/skills/` at repo root serve dual purposes:
+**Key insight**: The `.aura/`, `.claude/skills/`, and `.claude/templates/` at repo root serve dual purposes:
 1. **Working copies** - Used when developing aura with Claude Code
 2. **Template sources** - Copied to target repos by `aura init`
 
@@ -74,11 +75,12 @@ def init_aura(force=False, dry_run=False) -> dict:
 ```
 
 The init process:
-1. Creates folder structure: `.aura/memo/queue/`, `memo/processed/`, `memo/failed/`, `epics/`
+1. Creates folder structure: `.aura/visions/queue/`, `visions/processed/`, `visions/failed/`, `plans/queue/`, `plans/processed/`
 2. Copies `.aura/` files (scripts, aura.md, .gitignore, etc.)
-3. Copies `.claude/skills/` subdirectories
-4. Merges SessionStart hook into `.claude/settings.json`
-5. Runs `bd init` if beads CLI available
+3. Copies `.claude/templates/` files
+4. Copies `.claude/skills/` subdirectories
+5. Merges SessionStart hook into `.claude/settings.json`
+6. Runs `bd init` if beads CLI available
 
 #### Skills (Dogfooding)
 
@@ -91,16 +93,15 @@ The init process:
 **Available Skills**:
 | Skill | Purpose |
 |-------|---------|
-| `aura.process_memo` | Process all voice memos from queue |
-| `aura.epic` | Break a vision into an epic with tasks |
-| `aura.create_beads` | Convert epic tasks to beads tickets |
-| `aura.implement` | Implement beads in dependency order |
+| `aura.process_visions` | Process all visions from queue (text + audio) |
+| `aura.scope` | Research codebase and produce a scope file from a template |
+| `aura.execute` | Create beads from a scope file and implement autonomously |
 
-## Voice Memo Recording and Processing
+## Visions Pipeline
 
-### Recording Memos
+### Recording Audio Visions
 
-Use `record_memo.py` to record, transcribe, and queue memos in one step:
+Use `record_memo.py` to record, transcribe, and queue audio visions:
 
 ```bash
 python .aura/scripts/record_memo.py [--max-duration SECONDS]
@@ -110,16 +111,21 @@ The script:
 1. Records audio via sox (press Ctrl+C to stop)
 2. Transcribes via OpenAI Whisper
 3. Generates a kebab-case title from the transcript
-4. Saves to `.aura/memo/queue/<title>/` with `audio.wav` and `transcript.txt`
+4. Saves to `.aura/visions/queue/<title>/` with `audio.wav` and `transcript.txt`
 
-If transcription fails, audio is preserved in `.aura/memo/failed/` with a timestamp-based title.
+If transcription fails, audio is preserved in `.aura/visions/failed/` with a timestamp-based title.
+
+### Text Visions
+
+Place a `.txt` file directly in `.aura/visions/queue/` to create a text vision.
 
 ### Directory Layout
 
 ```
 .aura/
-├── memo/
-│   ├── queue/                   # Pending memos (git-ignored)
+├── visions/
+│   ├── queue/                   # Pending visions (git-ignored)
+│   │   ├── <title>.txt          # Text vision
 │   │   └── <title>/
 │   │       ├── audio.wav        # Original recording
 │   │       └── transcript.txt   # Whisper transcript
@@ -131,8 +137,12 @@ If transcription fails, audio is preserved in `.aura/memo/failed/` with a timest
 │       └── <title-or-timestamp>/
 │           ├── audio.wav        # Always preserved
 │           └── transcript.txt   # May be missing
-└── epics/                       # Epic planning documents
-    └── <epic-name>.md
+├── plans/
+│   ├── queue/                   # Scoped plans awaiting execution
+│   │   └── <plan-name>/
+│   │       └── scope.md
+│   └── processed/               # Completed plans
+└── scripts/
 ```
 
 ### Title Format
@@ -162,8 +172,8 @@ With frontmatter:
 
 ```markdown
 ---
-name: aura.process_memo
-description: Process all voice memos from queue
+name: aura.process_visions
+description: Process all visions from queue
 disable-model-invocation: true
 allowed-tools: Bash(python *), Read, Write, Glob
 ---
@@ -197,8 +207,8 @@ Aura is developed using aura. The skills and scripts at the repo root are the sa
 - If it works for us, it works for users
 
 **Workflow**:
-1. Edit `.claude/skills/aura.process_memo/SKILL.md`
-2. Run `/aura.process_memo` to test immediately
+1. Edit `.claude/skills/aura.process_visions/SKILL.md`
+2. Run `/aura.process_visions` to test immediately
 3. Fix issues, repeat
 
 ### Testing Changes
@@ -271,6 +281,7 @@ uv run aura init --dry-run
 | `src/aura/cli.py` | CLI commands (`init`, `check`) |
 | `src/aura/init.py` | Scaffolding logic |
 | `src/aura/config.py` | Configuration constants |
+| `.claude/templates/*.md` | Plan templates (feature, bug) |
 | `.claude/skills/*/SKILL.md` | Skill sources (dogfood + template) |
 | `.claude/settings.json` | SessionStart hook configuration |
 | `.aura/AURA.md` | Context file (injected at session start) |
@@ -292,7 +303,7 @@ uv run aura init --dry-run
 
 ### Add Template File
 
-1. Create file in `.aura/` or `.claude/skills/` at repo root
+1. Create file in `.claude/templates/` at repo root
 2. The init logic auto-discovers files via glob patterns
 3. No code changes needed in init.py (for most files)
 4. Test immediately (it's a working copy!)
@@ -338,6 +349,7 @@ Check that files exist at repo root:
 ```bash
 ls -la .aura/scripts/
 ls -la .claude/skills/
+ls -la .claude/templates/
 ```
 
 ### Init Fails Silently
@@ -365,4 +377,4 @@ Should contain a `SessionStart` hook that cats `.aura/AURA.md` and runs `bd prim
 
 ---
 
-*Last updated: 2026-01-29*
+*Last updated: 2026-01-31*

@@ -2,7 +2,7 @@
 
 Aura is agentic scaffolding that wraps a codebase to make life easier for both agents and human developers. It provides skills for planning and writing code — see available skills in CLAUDE.md.
 
-Voice memos can be recorded and queued via `python .aura/scripts/record_memo.py` for hands-free idea capture.
+Visions (text or audio) can be queued via `python .aura/scripts/record_memo.py` for hands-free idea capture, or by placing `.txt` files in `.aura/visions/queue/`.
 
 ## Beads (Issue Tracking)
 
